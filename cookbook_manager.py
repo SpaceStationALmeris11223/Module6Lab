@@ -99,6 +99,9 @@ def borrow_cookbook():
     try:# needs a borrowing record, includes return tracking date, and borrowing  history table
         cursor = conn.cursor()
         cursor.execute("Select * from borrowed_cookbooks")
+        if cursor.fetchone():
+            print("Sorry, this cookbook is already taken.")
+            return
 
 
     except Error as e:
