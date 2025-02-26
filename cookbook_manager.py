@@ -76,6 +76,34 @@ def get_all_cookbooks(conn):
         print(F"Error retrieving collections: {e}")
         return []
 
+def create_borrowing_table(conn):
+    """Create a tablevto keep track of borrowed cookbooks"""
+    try:
+        sql_create_borrowed_table = """
+        Create table if not exist borrowed_cookbooks
+        id Integer Primary key autoincrement,
+        cookbook_ID integer not null,
+        borrower_fullName text not null,
+        date_borrowed text not null,
+        return_date text not null,
+        foreign key (cookbook_id) refernces cookbook (id)
+        );"""
+        cursor = conn.cursor()
+        cursor.execute(sql_create_borrowed_table)
+        print("Successfully created borrowed cookbook table!")
+    except Error as e:
+        print(f"Error couldn't create borrowed table: {e}")
+
+def borrow_cookbook():
+    """Create a feature that allows people to borrow cookbooks and catalog who borrowed what and when."""
+    try:# needs a borrowing record, includes return tracking date, and borrowing  history table
+        cursor = conn.cursor()
+        cursor.execute("Select * from borrowed_cookbooks")
+
+
+    except Error as e:
+        print(f"Error Borrowing book: {e}")
+        return[]
 #Main function called when program executes
 #it directs the show
 def main():
