@@ -116,6 +116,49 @@ def borrow_cookbook(conn, cookbookID, borrower_fullname, date_borrowed, due_date
     except Error as e:
         print(f"Error Borrowing book: {e}")
         return False
+
+def collection_analytics(conn):
+    """Gives analytical insight about your cookbook collection"""
+    try:
+        cursor = conn.cursor()
+
+        #down below calculates average asthetic rating
+        cursor.execute("Select AVG(aesthetic_rating) from cookbooks")
+        avg_rating = cursor.fetchone()[0]
+        avg_rating = round(avg_rating, 2) if avg_rating else 0
+        print(f"\n Average Aethetic rating: {avg_rating} / 5")
+
+        #down below tracks trends by the year
+        cursor.execute(""" Select year_published, AVG(aesthetic_rating)
+            from cookbooks
+            group by year_published
+            order by year_published""")
+        year_trends = cursor.fetchall()
+
+        if year_trends:
+            print(" Aestetic Trends by year:")
+            print(" Year | AVG Aesthetic Rating ")
+            print("_" * 30)
+            for year, rating in year_trends:
+                print(f"{year} | {round(rating, 2)}")
+        else:
+            print("Sorry no asthetic trends data are currently available")
+        
+        #Down below id's gaps in the collection (Examp years with no cookbooks, etc)
+        cursor.execute("Select DISTINCT year_published from cookbooks order by year_published")
+        years_with_cookbooks = [row[0] for row in cursor.fetchall()]
+
+        if years_with_cookbooks:
+            all_years = list(range(min(years_with_cookbooks), max(years_with_cookbooks) + 1))
+            years_missing = sorted(set(all_years) - set(years_with_cookbooks))
+        else:
+            years_missing = []
+        if years_missing:
+            print(f"\n There are some gaps in your collection (missing Years): {years_missing}")
+        else:
+            print("\n Congrats there are no missing years on your cookbook collection. Way to Go!")
+    except Error as e:
+        print(f"Error generating analytics: {e}")
 #Main function called when program executes
 #it directs the show
 def main():
@@ -157,7 +200,8 @@ def main():
 
         #Borrowing a cookbook
         borrow_cookbook(conn, 1, "O.G Hipster", "2025-02-22", "2025-03-25")
-
+        #cookbook analytics
+        collection_analytics(conn)
         conn.close()
         print("\nDatabase connection closed")
 
