@@ -80,33 +80,42 @@ def create_borrowing_table(conn):
     """Create a tablevto keep track of borrowed cookbooks"""
     try:
         sql_create_borrowed_table = """
-        Create table if not exist borrowed_cookbooks
-        id Integer Primary key autoincrement,
-        cookbook_ID integer not null,
-        borrower_fullName text not null,
+        Create table if not exists borrowed_cookbooks (
+        borrowID Integer Primary key autoincrement,
+        cookbookID integer not null,
+        borrower_fullname text not null,
         date_borrowed text not null,
-        return_date text not null,
-        foreign key (cookbook_id) refernces cookbook (id)
+        due_date text not null,
+        foreign key (cookbookID) references cookbooks (id)
         );"""
         cursor = conn.cursor()
         cursor.execute(sql_create_borrowed_table)
-        print("Successfully created borrowed cookbook table!")
+        conn.commit()
+        print(f"Succefully created the borrowed cookbooks table!")
     except Error as e:
-        print(f"Error couldn't create borrowed table: {e}")
+        print(f"Error couldn't create the borrowed cookbook table: {e}")
 
-def borrow_cookbook():
+def borrow_cookbook(conn, cookbookID, borrower_fullname, date_borrowed, due_date):
     """Create a feature that allows people to borrow cookbooks and catalog who borrowed what and when."""
     try:# needs a borrowing record, includes return tracking date, and borrowing  history table
         cursor = conn.cursor()
-        cursor.execute("Select * from borrowed_cookbooks")
+        cursor.execute("select * from borrowed_cookbooks where cookbookID = ?", (cookbookID,))
         if cursor.fetchone():
-            print("Sorry, this cookbook is already taken.")
-            return
-
-
+            print(f" Sorry this cookbook (ID: {cookbookID}) Is already borrowed.")
+            return False
+        
+        #Insert borrowing record
+        cursor.execute(""" insert into borrowed_cookbooks
+            (cookbookID, borrower_fullname, date_borrowed, due_date) 
+            values (?,?,?,?)""",
+            (cookbookID, borrower_fullname, date_borrowed, due_date))
+        
+        conn.commit()
+        print(f" {borrower_fullname} borrowed cookbook ID# {cookbookID} on {date_borrowed} it's due to return on {due_date}!")
+        return True  
     except Error as e:
         print(f"Error Borrowing book: {e}")
-        return[]
+        return False
 #Main function called when program executes
 #it directs the show
 def main():
@@ -120,6 +129,7 @@ def main():
     if conn is not None:
         #create our table
         create_table(conn)
+        create_borrowing_table(conn)
 
         #inserts some carefully curated cookbook samples
         cookbooks = [
@@ -144,6 +154,9 @@ def main():
 
         print("\nYour carefully curated collection:")
         get_all_cookbooks(conn)
+
+        #Borrowing a cookbook
+        borrow_cookbook(conn, 1, "O.G Hipster", "2025-02-22", "2025-03-25")
 
         conn.close()
         print("\nDatabase connection closed")
